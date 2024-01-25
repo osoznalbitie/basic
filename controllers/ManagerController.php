@@ -9,8 +9,11 @@ use app\models\forms\EditEmployeeForm;
 use app\models\Position;
 use app\models\User;
 use Yii;
+use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
+use yii\web\Response;
 
 class ManagerController extends Controller
 {
@@ -22,7 +25,7 @@ class ManagerController extends Controller
     public function behaviors() {
         return [
             'access' => [
-                'class' => \yii\filters\AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -80,11 +83,11 @@ class ManagerController extends Controller
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
-    public function actionDeleteEmployee($id): \yii\web\Response
+    public function actionDeleteEmployee($id): Response
     {
         $employee = User::findOne($id);
         if (!$employee) {
-            throw new \yii\web\NotFoundHttpException('Сотрудник не найден.');
+            throw new NotFoundHttpException('Сотрудник не найден.');
         }
 
         if ($employee->id === Yii::$app->user->id) {
@@ -92,13 +95,7 @@ class ManagerController extends Controller
             return $this->redirect(['employees']);
         }
 
-        Yii::$app->db->createCommand()->update('book_return', ['employee_id' => null], ['employee_id' => $employee->id])->execute();
-        Yii::$app->db->createCommand()->update('book_issue', ['employee_id' => null], ['employee_id' => $employee->id])->execute();
-        if ($employee->delete()) {
-            Yii::$app->session->setFlash('success', 'Сотрудник успешно удален.');
-        } else {
-            Yii::$app->session->setFlash('error', 'Произошла ошибка при удалении сотрудника.');
-        }
+        User::deleteUser($employee);
 
         return $this->redirect(['employees']);
     }
@@ -115,7 +112,7 @@ class ManagerController extends Controller
     {
         $employee = User::findOne($id);
         if (!$employee) {
-            throw new \yii\web\NotFoundHttpException('Сотрудник не найден.');
+            throw new NotFoundHttpException('Сотрудник не найден.');
         }
 
         $model = new EditEmployeeForm();

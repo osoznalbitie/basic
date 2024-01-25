@@ -4,18 +4,18 @@
 namespace app\controllers;
 
 
-use app\models\Author;
 use app\models\Book;
 use app\models\BookIssue;
 use app\models\BookOperation;
 use app\models\BookReturn;
 use app\models\forms\AddBookForm;
 use app\models\forms\BookIssueForm;
-use app\models\Client;
 use app\models\forms\BookReturnForm;
 use Yii;
 use yii\data\Pagination;
+use yii\filters\AccessControl;
 use yii\web\Controller;
+use yii\web\Response;
 
 class BookController extends Controller
 {
@@ -24,7 +24,7 @@ class BookController extends Controller
     {
         return [
             'access' => [
-                'class' => \yii\filters\AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -35,7 +35,7 @@ class BookController extends Controller
         ];
     }
 
-    public function actionIndex(): \yii\web\Response
+    public function actionIndex(): Response
     {
         return $this->redirect('book/list');
     }
@@ -110,26 +110,7 @@ class BookController extends Controller
      */
     public function actionDeleteBook($bookId): string
     {
-        $book = Book::getBook($bookId);;
-
-        $bookIssues = BookIssue::find()->where(['book_id' => $bookId])->all();
-        foreach ($bookIssues as $bookIssue) {
-            $bookIssue->delete();
-        }
-
-        $bookReturns = BookReturn::find()->where(['book_id' => $bookId])->all();
-        foreach ($bookReturns as $bookReturn) {
-            $bookReturn->delete();
-        }
-
-        $book->delete();
-
-        $author = $book->author;
-        $countBooks = Book::find()->where(['author_id' => $author->id])->count();
-
-        if ($countBooks == 0) {
-            $author->delete();
-        }
+        Book::deleteBook($bookId);
 
         return $this->actionList();
     }
@@ -139,6 +120,7 @@ class BookController extends Controller
      *
      * @param $bookId
      * @return string|\yii\web\Response
+     * @throws \yii\base\ExitException
      */
     public function actionIssueBook($bookId)
     {

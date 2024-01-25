@@ -7,7 +7,6 @@ namespace app\models;
 use app\models\forms\addEmployeeForm;
 use app\models\forms\EditEmployeeForm;
 use Yii;
-use yii\base\NotSupportedException;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 
@@ -87,6 +86,15 @@ class User extends ActiveRecord implements IdentityInterface
         Yii::$app->authManager->assign($userRole, $user->getId());
     }
 
+    public static function deleteUser($employee) {
+        Yii::$app->db->createCommand()->update('book_return', ['employee_id' => null], ['employee_id' => $employee->id])->execute();
+        Yii::$app->db->createCommand()->update('book_issue', ['employee_id' => null], ['employee_id' => $employee->id])->execute();
+        if ($employee->delete()) {
+            Yii::$app->session->setFlash('success', 'Сотрудник успешно удален.');
+        } else {
+            Yii::$app->session->setFlash('error', 'Произошла ошибка при удалении сотрудника.');
+        }
+    }
 
     public function getId()
     {

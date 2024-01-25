@@ -4,7 +4,6 @@
 namespace app\models;
 
 
-use app\controllers\BookController;
 use app\models\forms\AddBookForm;
 use Yii;
 use yii\db\ActiveRecord;
@@ -50,6 +49,38 @@ class Book extends ActiveRecord
         $book->author_id = $author->id;
         $book->arrival_date = $model->arrival_date;
         return $book->save();
+    }
+
+    /**
+     * Удаление книги с её операциями и проверка автора
+     *
+     * @param $bookId
+     * @throws \Throwable
+     * @throws \yii\base\ExitException
+     * @throws \yii\db\StaleObjectException
+     */
+    public static function deleteBook($bookId)
+    {
+        $book = Book::getBook($bookId);
+
+        $bookIssues = BookIssue::find()->where(['book_id' => $bookId])->all();
+        foreach ($bookIssues as $bookIssue) {
+            $bookIssue->delete();
+        }
+
+        $bookReturns = BookReturn::find()->where(['book_id' => $bookId])->all();
+        foreach ($bookReturns as $bookReturn) {
+            $bookReturn->delete();
+        }
+
+        $book->delete();
+
+        $author = $book->author;
+        $countBooks = Book::find()->where(['author_id' => $author->id])->count();
+
+        if ($countBooks == 0) {
+            $author->delete();
+        }
     }
 
 
